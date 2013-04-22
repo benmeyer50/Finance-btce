@@ -5,7 +5,10 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     NAME              => 'Finance::btce',
     VERSION_FROM      => 'lib/Finance/btce.pm', # finds $VERSION
-    PREREQ_PM         => {'JSON' => 0,}, # e.g., Module::Name => 1.1
+    PREREQ_PM         => {
+	    'JSON' => 0,
+	    'LWP::UserAgent' => 0,
+	}, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Finance/btce.pm', # retrieve abstract from module
        AUTHOR         => 'Benjamin Meyer <bmeyer@apple.com>') : ()),
