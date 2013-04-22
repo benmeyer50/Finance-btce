@@ -5,6 +5,8 @@ use strict;
 use warnings;
 use JSON;
 use LWP::UserAgent;
+use Carp qw(croak);
+use Digest::SHA qw( hmac_sha512);
 
 require Exporter;
 
@@ -85,7 +87,7 @@ sub LTCtoUSD
 	);
 
 	return \%price;
-}
+}	
 
 1;
 __END__
@@ -95,35 +97,35 @@ __END__
 
 Finance::btce - Perl extension for interfacing with the BTC-e bitcoin exchange
 
+=head1 Version
+
+Version 0.01
+
 =head1 SYNOPSIS
 
   use Finance::btce;
-  blah blah blah
 
-=head1 DESCRIPTION
+  my $btce = Finance::btce->new({key => 'key', secret => 'secret',});
 
-Stub documentation for Finance::btce, created by h2xs. It looks like the
-author of the extension was negligent enough to leave the stub
-unedited.
+#public API calls
+  
+  #Prices for Bitcoin to USD
+  my %price = %{BTCtoUSD()};
 
-Blah blah blah.
+  #Prices for Litecoin to Bitcoin
+  my %price = %{LTCtoBTC()};
+  
+  #Prices for Litecoin to USD
+  my %price = %{LTCtoUSD()};
 
 =head2 EXPORT
 
 None by default.
 
+=head1 BUGS
 
-
-=head1 SEE ALSO
-
-Mention other useful documentation such as the documentation of
-related modules or operating system documentation (such as man pages
-in UNIX), or any relevant external documentation such as RFCs or
-standards.
-
-If you have a mailing list set up for your module, mention it here.
-
-If you have a web site set up for your module, mention it here.
+Please report all bug and feature requests through github
+at L<https://github.com/benmeyer50/Finance-btce/issues>
 
 =head1 AUTHOR
 
