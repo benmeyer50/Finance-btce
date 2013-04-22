@@ -34,13 +34,14 @@ our $json = JSON->new->allow_nonref;
 sub BTCtoUSD
 {
 	my $browser = LWP::UserAgent->new(ssl_opts => {verify_hostname => 1});
+	$browser->agent('Mozilla/4.76 [en] (Win98; U)');
 	my $resp = $browser->get("https://btc-e.com/api/2/btc_usd/ticker");
 	my $apiresponse = $resp->content;
 	my %ticker = %{$json->decode($apiresponse)};
 	my %prices = $ticker{'ticker'};
 	my $high = $prices{'high'}; 
-	my $low = $prices {'low'};
-	my $avg = $prices {'avg'};
+	my $low = $prices{'low'};
+	my $avg = $prices{'avg'};
 	my %price = (
 		'high' => $high,
 		'low' => $low,
