@@ -3,6 +3,8 @@ package Finance::btce;
 use 5.012004;
 use strict;
 use warnings;
+use JSON;
+use LWP::UserAgent;
 
 require Exporter;
 
@@ -15,7 +17,7 @@ our @ISA = qw(Exporter);
 # This allows declaration	use Finance::btce ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(
+our %EXPORT_TAGS = ( 'all' => [ qw(BTCtoUSD
 	
 ) ] );
 
@@ -27,8 +29,23 @@ our @EXPORT = qw(
 
 our $VERSION = '0.01';
 
+our $json = JSON->new();
 
-# Preloaded methods go here.
+sub BTCtoUSD
+{
+	my $browser = LWP::UserAgent->new(ssl_opts => {verify_hostname => 1});
+	my $resp = $browser->get("https://btc-e.com/api/2/btc_usd/ticker");
+	my $apiresponse = $resp->content;
+	my $ticker = $json->decode($apiresponse);
+	if(defined($ticker))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
 
 1;
 __END__
