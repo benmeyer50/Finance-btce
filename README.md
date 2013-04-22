@@ -1,4 +1,4 @@
-!https://travis-ci.org/benmeyer50/Finance-btce.png?branch=master!:https://travis-ci.org/benmeyer50/Finance-btce
+[![Build Status](https://travis-ci.org/benmeyer50/Finance-btce.png?branch=master)](https://travis-ci.org/benmeyer50/Finance-btce)
 
 Finance-btce version 0.01
 =========================
