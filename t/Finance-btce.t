@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 2;
+use Test::More tests => 4;
 BEGIN { use_ok('Finance::btce') };
 
 #########################
@@ -18,3 +18,9 @@ BEGIN { use_ok('Finance::btce') };
 
 my %btupublic = %{Finance::btce::BTCtoUSD()};
 ok( defined($btupublic{'avg'}), 'BTCtoUSD() works');
+
+my %ltbpublic = %{Finance::btce::LTCtoBTC()};
+ok( defined($ltbpublic{'avg'}), 'LTCtoBTC() works');
+
+my %ltupublic = %{Finance::btce::LTCtoUSD()};
+ok( defined($ltupublic{'avg'}), 'LTCtoUSD() works');

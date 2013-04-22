@@ -17,15 +17,11 @@ our @ISA = qw(Exporter);
 # This allows declaration	use Finance::btce ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(BTCtoUSD
-	
-) ] );
+our %EXPORT_TAGS = ( 'all' => [ qw(BTCtoUSD LTCtoBTC LTCtoUSD) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
-our @EXPORT = qw(
-	
-);
+our @EXPORT = qw();
 
 our $VERSION = '0.01';
 
@@ -51,13 +47,53 @@ sub BTCtoUSD
 	return \%price;
 }
 
+sub LTCtoBTC
+{
+	my $browser = LWP::UserAgent->new(ssl_opts => {verify_hostname => 1});
+	$browser->agent('Mozilla/4.76 [en] (Win98; U)');
+	my $resp = $browser->get("https://btc-e.com/api/2/ltc_btc/ticker");
+	my $apiresponse = $resp->content;
+	my %ticker = %{$json->decode($apiresponse)};
+	my %prices = %{$ticker{'ticker'}};
+	my $high = $prices{'high'}; 
+	my $low = $prices{'low'};
+	my $avg = $prices{'avg'};
+	my %price = (
+		'high' => $high,
+		'low' => $low,
+		'avg' => $avg,
+	);
+
+	return \%price;
+}
+
+sub LTCtoUSD
+{
+	my $browser = LWP::UserAgent->new(ssl_opts => {verify_hostname => 1});
+	$browser->agent('Mozilla/4.76 [en] (Win98; U)');
+	my $resp = $browser->get("https://btc-e.com/api/2/ltc_usd/ticker");
+	my $apiresponse = $resp->content;
+	my %ticker = %{$json->decode($apiresponse)};
+	my %prices = %{$ticker{'ticker'}};
+	my $high = $prices{'high'}; 
+	my $low = $prices{'low'};
+	my $avg = $prices{'avg'};
+	my %price = (
+		'high' => $high,
+		'low' => $low,
+		'avg' => $avg,
+	);
+
+	return \%price;
+}
+
 1;
 __END__
 # Below is stub documentation for your module. You'd better edit it!
 
 =head1 NAME
 
-Finance::btce - Perl extension for blah blah blah
+Finance::btce - Perl extension for interfacing with the BTC-e bitcoin exchange
 
 =head1 SYNOPSIS
 
