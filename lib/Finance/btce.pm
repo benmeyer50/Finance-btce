@@ -38,7 +38,7 @@ sub BTCtoUSD
 	my $resp = $browser->get("https://btc-e.com/api/2/btc_usd/ticker");
 	my $apiresponse = $resp->content;
 	my %ticker = %{$json->decode($apiresponse)};
-	my %prices = $ticker{'ticker'};
+	my %prices = %{$ticker{'ticker'}};
 	my $high = $prices{'high'}; 
 	my $low = $prices{'low'};
 	my $avg = $prices{'avg'};
