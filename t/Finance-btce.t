@@ -17,8 +17,6 @@ BEGIN { use_ok('Finance::btce') };
 # its man page ( perldoc Test::More ) for help writing this test script.
 #
 #These keys are for testing purposes only. No real money is stored in this account.
-my $apikey="PEMFNC9A-U3E5Y3J5-6V054246-9W3GXUVY-3EJGJZU3";
-my $secretkey="05f1e5b0a88e16b8b1490732f77a976c68f0fc8243411b6f0fa25fe857792e30";
 
 my %btupublic = %{Finance::btce::BTCtoUSD()};
 ok( defined($btupublic{'avg'}), 'BTCtoUSD() works');
@@ -29,5 +27,6 @@ ok( defined($ltbpublic{'avg'}), 'LTCtoBTC() works');
 my %ltupublic = %{Finance::btce::LTCtoUSD()};
 ok( defined($ltupublic{'avg'}), 'LTCtoUSD() works');
 
-my %getinfo = %{Finance::btce::getInfo($apikey, $secretkey)};
-ok( $getinfo{'success'} eq '1', 'getInfo() works');
+my $btce = Finance::btce->new({ 'apikey' => "PEMFNC9A-U3E5Y3J5-6V054246-9W3GXUVY-3EJGJZU3", 'secret' => "05f1e5b0a88e16b8b1490732f77a976c68f0fc8243411b6f0fa25fe857792e30",});
+
+ok( defined($btce) && ref btce eq 'Finance::btce', 'new() works');

@@ -90,18 +90,33 @@ sub LTCtoUSD
 	return \%price;
 }
 
+### Authenticated API calls
+
+sub new
+{
+	my ($class, $args) = @_;
+	if($args->{'apikey'} && $args->{'secret'})
+	{
+		#check for existence of keys
+	}
+	else
+	{
+		croak "You must provide an apikey and secret";
+	}
+	return bless $args, $class;
+}
+
 sub getInfo
 {
-	my ($apikey, $secret) = @_;
-	my $self = shift;
+	my ($self) = @_;
 	my $mech = WWW::Mechanize->new();
 	$mech->stack_depth(0);
 	$mech->agent_alias('Windows IE 6');
 	my $nonce = time;
 	my $url = "https://btc-e.com/tapi";
 	my $data = "method=getInfo&nonce=".$nonce;
-	my $hash = hmac_sha512_hex($data,$secret);
-	$mech->add_header('Key' => $apikey);
+	my $hash = hmac_sha512_hex($data,$self->_secretkey);
+	$mech->add_header('Key' => $self->_apikey);
 	$mech->add_header('Sign' => $hash);
 	$mech->post($url, ['method' => 'getInfo', 'nonce' => $nonce]);
 	my %apireturn = %{$json->decode($mech->content())};
@@ -109,6 +124,19 @@ sub getInfo
 	return \%apireturn;
 }
 
+#private methods
+
+sub _apikey
+{
+	my ($self) = @_;
+	return $self->{'apikey'};
+}
+
+sub _secretkey
+{
+	my ($self) = @_;
+	return $self->{'secret'};
+}
 
 1;
 __END__
