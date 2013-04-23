@@ -128,6 +128,11 @@ sub TransHistory
 	my ($self, $args) = @_;
 	my $data = "method=TransHistory&";
 	my %arguments = %{$args};
+	my $mech = WWW::Mechanize->new();
+	$mech->stack_depth(0);
+	$mech->agent_alias('Windows IE 6');
+	my $url = "https://btc-e.com/tapi";
+
 	foreach my $key(keys %arguments)
 	{
 		$data += "$key=$arguments{$key}&";
