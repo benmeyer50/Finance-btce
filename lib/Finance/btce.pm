@@ -6,7 +6,7 @@ use warnings;
 use JSON;
 use LWP::UserAgent;
 use Carp qw(croak);
-use Digest::SHA qw( hmac_sha512);
+use Digest::SHA qw( hmac_sha512_hex);
 use WWW::Mechanize;
 
 require Exporter;
@@ -95,12 +95,12 @@ sub getInfo
 	my ($apikey, $secret) = @_;
 	my $self = shift;
 	my $mech = WWW::Mechanize->new();
-	$mech->stack_depth();
+	$mech->stack_depth(0);
 	$mech->agent_alias('Windows IE 6');
 	my $nonce = time;
 	my $url = "https://btc-e.com/tapi";
 	my $data = "method=getInfo&nonce=".$nonce;
-	my $hash = hmac_sha512($data,$secret);
+	my $hash = hmac_sha512_hex($data,$secret);
 	$mech->add_header('Key' => $apikey);
 	$mech->add_header('Sign' => $hash);
 	$mech->post($url, ['method' => 'getInfo', 'nonce' => $nonce]);
