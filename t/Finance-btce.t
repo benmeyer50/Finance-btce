@@ -29,4 +29,4 @@ ok( defined($ltupublic{'avg'}), 'LTCtoUSD() works');
 
 my $btce = Finance::btce->new({ 'apikey' => "PEMFNC9A-U3E5Y3J5-6V054246-9W3GXUVY-3EJGJZU3", 'secret' => "05f1e5b0a88e16b8b1490732f77a976c68f0fc8243411b6f0fa25fe857792e30",});
 
-ok( defined($btce) && ref btce eq 'Finance::btce', 'new() works');
+ok( defined($btce) && ref $btce eq 'Finance::btce', 'new() works');
