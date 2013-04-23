@@ -87,7 +87,27 @@ sub LTCtoUSD
 	);
 
 	return \%price;
-}	
+}
+
+sub getInfo
+{
+	my ($apikey, $secret) = @_;
+	my $self = shift;
+	my $mech = WWW::Mechanize->new();
+	$mech->stack_depth();
+	$mech->agent_alist('Windows IE 8');
+	my $nonce = time;
+	my $url = "https://btc-e.com/tapi";
+	my $data = "method=getInfo&nonce=".$nonce;
+	my $hash = hmac_sha512($data,$secret);
+	$mech->add_header('Key' => $apikey);
+	$mech->add_header('Sign' => $hash);
+	$mech->post($url, ['method' => 'getInfo', 'nonce' => $nonce]);
+	my %apireturn = %{$json->decode($mech->content())};
+
+	return \%apireturn;
+}
+
 
 1;
 __END__

@@ -11,6 +11,7 @@ WriteMakefile(
 	    'Mozilla::CA' => 0,
 	    'Carp' => 0,
 	    'Digest::SHA' => 0,
+	    'WWW::Mechanize' => 0,
 	}, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Finance/btce.pm', # retrieve abstract from module
