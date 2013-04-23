@@ -7,6 +7,7 @@ use JSON;
 use LWP::UserAgent;
 use Carp qw(croak);
 use Digest::SHA qw( hmac_sha512);
+use WWW:Mechanize;
 
 require Exporter;
 
