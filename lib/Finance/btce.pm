@@ -96,7 +96,7 @@ sub getInfo
 	my $self = shift;
 	my $mech = WWW::Mechanize->new();
 	$mech->stack_depth();
-	$mech->agent_alist('Windows IE 8');
+	$mech->agent_alias('Windows IE 8');
 	my $nonce = time;
 	my $url = "https://btc-e.com/tapi";
 	my $data = "method=getInfo&nonce=".$nonce;
