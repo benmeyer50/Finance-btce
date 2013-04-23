@@ -178,7 +178,7 @@ at L<https://github.com/benmeyer50/Finance-btce/issues>
 
 =head1 AUTHOR
 
-Benjamin Meyer, E<lt>bmeyer@apple.comE<gt>
+Benjamin Meyer, E<lt>bmeyer@benjamindmeyer.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
