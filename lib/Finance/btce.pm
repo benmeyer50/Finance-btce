@@ -130,7 +130,7 @@ sub TransHistory
 	my %arguments = %{$args};
 	foreach my $key(keys %arguments)
 	{
-		$data += "$key=$argument{$key}&"
+		$data += "$key=$arguments{$key}&";
 	}
 	$data += "nonce=".$self->_createnonce;
 	my $hash = $self->_signdata($data);
