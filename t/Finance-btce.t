@@ -34,3 +34,7 @@ ok( defined($btce) && ref $btce eq 'Finance::btce', 'new() works');
 my %getinfotest = %{$btce->getInfo()};
 
 ok( $getinfotest{'success'} eq '1');
+
+my %gettranstest = %{$btce->TransHistory()};
+
+ok ( $gettranstest{'success'} eq '1');

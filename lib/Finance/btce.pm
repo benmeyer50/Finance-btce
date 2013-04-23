@@ -20,11 +20,11 @@ our @ISA = qw(Exporter);
 # This allows declaration	use Finance::btce ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(BTCtoUSD LTCtoBTC LTCtoUSD) ] );
+our %EXPORT_TAGS = ( 'all' => [ qw(BTCtoUSD LTCtoBTC LTCtoUSD getInfo) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
-our @EXPORT = qw();
+our @EXPORT = qw(new);
 
 our $VERSION = '0.02';
 
@@ -112,13 +112,31 @@ sub getInfo
 	my $mech = WWW::Mechanize->new();
 	$mech->stack_depth(0);
 	$mech->agent_alias('Windows IE 6');
-	my $nonce = time;
 	my $url = "https://btc-e.com/tapi";
-	my $data = "method=getInfo&nonce=".$nonce;
-	my $hash = hmac_sha512_hex($data,$self->_secretkey);
+	my $data = "method=getInfo&nonce=".$self->_createnonce;
+	my $hash = $self->_signdata($data);
 	$mech->add_header('Key' => $self->_apikey);
 	$mech->add_header('Sign' => $hash);
 	$mech->post($url, ['method' => 'getInfo', 'nonce' => $nonce]);
+	my %apireturn = %{$json->decode($mech->content())};
+
+	return \%apireturn;
+}
+
+sub TransHistory
+{
+	my ($self, $args) = @_;
+	my $data = "method=TransHistory&";
+	my %arguments = %{$args};
+	foreach my $key(keys %arguments)
+	{
+		$data += "$key=$argument{$key}&"
+	}
+	$data += "nonce=".$self->_createnonce;
+	my $hash = $self->_signdata($data);
+	$mech->add_header('Key' => $self->_apikey);
+	$mech->add_header('Sign' => $hash);
+	$mech->post($url, ['method' => 'TransHistory', 'nonce' => $nonce]);
 	my %apireturn = %{$json->decode($mech->content())};
 
 	return \%apireturn;
@@ -136,6 +154,17 @@ sub _secretkey
 {
 	my ($self) = @_;
 	return $self->{'secret'};
+}
+
+sub _createnonce
+{
+	return time;
+}
+
+sub _signdata
+{
+	my ($self, $params) = @_;
+	return hmac_sha512_hex($params,$self->_secretkey);
 }
 
 1;
@@ -156,7 +185,7 @@ Version 0.01
 
   my $btce = Finance::btce->new({key => 'key', secret => 'secret',});
 
-#public API calls
+  #public API calls
   
   #Prices for Bitcoin to USD
   my %price = %{BTCtoUSD()};
@@ -166,6 +195,10 @@ Version 0.01
   
   #Prices for Litecoin to USD
   my %price = %{LTCtoUSD()};
+
+  #Authenticated API Calls
+
+  my %accountinfo = %{$btce->getInfo()};
 
 =head2 EXPORT
 
