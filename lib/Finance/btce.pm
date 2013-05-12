@@ -113,7 +113,8 @@ sub getInfo
 	$mech->stack_depth(0);
 	$mech->agent_alias('Windows IE 6');
 	my $url = "https://btc-e.com/tapi";
-	my $data = "method=getInfo&nonce=".$self->_createnonce;
+	my $nonce = $self->_createnonce;
+	my $data = "method=getInfo&nonce=".$nonce;
 	my $hash = $self->_signdata($data);
 	$mech->add_header('Key' => $self->_apikey);
 	$mech->add_header('Sign' => $hash);
@@ -132,12 +133,13 @@ sub TransHistory
 	$mech->stack_depth(0);
 	$mech->agent_alias('Windows IE 6');
 	my $url = "https://btc-e.com/tapi";
+	my $nonce = $self->_createnonce;
 
 	foreach my $key(keys %arguments)
 	{
 		$data += "$key=$arguments{$key}&";
 	}
-	$data += "nonce=".$self->_createnonce;
+	$data += "nonce=".$nonce;
 	my $hash = $self->_signdata($data);
 	$mech->add_header('Key' => $self->_apikey);
 	$mech->add_header('Sign' => $hash);
