@@ -26,7 +26,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
 our @EXPORT = qw(new);
 
-our $VERSION = '0.02';
+our $VERSION = '0.1';
 
 our $json = JSON->new->allow_nonref;
 
