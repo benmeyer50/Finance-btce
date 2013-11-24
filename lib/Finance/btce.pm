@@ -30,10 +30,19 @@ our $VERSION = '0.02';
 
 our $json = JSON->new->allow_nonref;
 
+sub NewAgent
+{
+	my ($version) = @_;
+	my $agent = LWP::UserAgent->new(ssl_opts => {verify_hostname => 1}, env_proxy => 1);
+	if (defined($version)) {
+		$browser->agent($version);
+	}
+	return $agent;
+}
+
 sub BTCtoUSD
 {
-	my $browser = LWP::UserAgent->new(ssl_opts => {verify_hostname => 1});
-	$browser->agent('Mozilla/4.76 [en] (Win98; U)');
+	my $browser = Finance::btce::NewAgent('Mozilla/4.76 [en] (Win98; U)');
 	my $resp = $browser->get("https://btc-e.com/api/2/btc_usd/ticker");
 	my $apiresponse = $resp->content;
 	my %ticker = %{$json->decode($apiresponse)};
@@ -52,8 +61,7 @@ sub BTCtoUSD
 
 sub LTCtoBTC
 {
-	my $browser = LWP::UserAgent->new(ssl_opts => {verify_hostname => 1});
-	$browser->agent('Mozilla/4.76 [en] (Win98; U)');
+	my $browser = Finance::btce::NewAgent('Mozilla/4.76 [en] (Win98; U)');
 	my $resp = $browser->get("https://btc-e.com/api/2/ltc_btc/ticker");
 	my $apiresponse = $resp->content;
 	my %ticker = %{$json->decode($apiresponse)};
@@ -72,8 +80,7 @@ sub LTCtoBTC
 
 sub LTCtoUSD
 {
-	my $browser = LWP::UserAgent->new(ssl_opts => {verify_hostname => 1});
-	$browser->agent('Mozilla/4.76 [en] (Win98; U)');
+	my $browser = Finance:btce::NewAgent('Mozilla/4.76 [en] (Win98; U)');
 	my $resp = $browser->get("https://btc-e.com/api/2/ltc_usd/ticker");
 	my $apiresponse = $resp->content;
 	my %ticker = %{$json->decode($apiresponse)};
