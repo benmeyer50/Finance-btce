@@ -20,7 +20,7 @@ our @ISA = qw(Exporter);
 # This allows declaration	use Finance::btce ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(BTCtoUSD LTCtoBTC LTCtoUSD getInfo) ] );
+our %EXPORT_TAGS = ( 'all' => [ qw(BtceConversion BTCtoUSD LTCtoBTC LTCtoUSD getInfo) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
@@ -30,72 +30,27 @@ our $VERSION = '0.02';
 
 our $json = JSON->new->allow_nonref;
 
-sub NewAgent
-{
-	my ($version) = @_;
-	my $agent = LWP::UserAgent->new(ssl_opts => {verify_hostname => 1}, env_proxy => 1);
-	if (defined($version)) {
-		$browser->agent($version);
-	}
-	return $agent;
-}
-
 sub BTCtoUSD
 {
-	my $browser = Finance::btce::NewAgent('Mozilla/4.76 [en] (Win98; U)');
-	my $resp = $browser->get("https://btc-e.com/api/2/btc_usd/ticker");
-	my $apiresponse = $resp->content;
-	my %ticker = %{$json->decode($apiresponse)};
-	my %prices = %{$ticker{'ticker'}};
-	my $high = $prices{'high'}; 
-	my $low = $prices{'low'};
-	my $avg = $prices{'avg'};
-	my %price = (
-		'high' => $high,
-		'low' => $low,
-		'avg' => $avg,
-	);
-
-	return \%price;
+	return BtceConversion('btc_usd');
 }
 
 sub LTCtoBTC
 {
-	my $browser = Finance::btce::NewAgent('Mozilla/4.76 [en] (Win98; U)');
-	my $resp = $browser->get("https://btc-e.com/api/2/ltc_btc/ticker");
-	my $apiresponse = $resp->content;
-	my %ticker = %{$json->decode($apiresponse)};
-	my %prices = %{$ticker{'ticker'}};
-	my $high = $prices{'high'}; 
-	my $low = $prices{'low'};
-	my $avg = $prices{'avg'};
-	my %price = (
-		'high' => $high,
-		'low' => $low,
-		'avg' => $avg,
-	);
-
-	return \%price;
+	return BtceConversion('ltc_btc');
 }
 
 sub LTCtoUSD
 {
-	my $browser = Finance:btce::NewAgent('Mozilla/4.76 [en] (Win98; U)');
-	my $resp = $browser->get("https://btc-e.com/api/2/ltc_usd/ticker");
-	my $apiresponse = $resp->content;
-	my %ticker = %{$json->decode($apiresponse)};
-	my %prices = %{$ticker{'ticker'}};
-	my $high = $prices{'high'}; 
-	my $low = $prices{'low'};
-	my $avg = $prices{'avg'};
-	my %price = (
-		'high' => $high,
-		'low' => $low,
-		'avg' => $avg,
-	);
-
-	return \%price;
+	return BtceConversion('ltc_usd');
 }
+
+sub BtceConversion
+{
+	my ($exchange) = @_;
+	return _apiprice('Mozilla/4.76 [en] (Win98; U)', $exchange);
+}
+	
 
 ### Authenticated API calls
 
@@ -164,10 +119,34 @@ sub _apikey
 	return $self->{'apikey'};
 }
 
-sub _secretkey
+sub _apiprice
 {
-	my ($self) = @_;
-	return $self->{'secret'};
+	my ($version, $exchange) = @_;
+
+	my $browser = Finance::btce::_newagent($version);
+	my $resp = $browser->get("https://btc-e.com/api/2/".$exchange."/ticker");
+	my $apiresponse = $resp->content;
+	my %ticker;
+	eval {
+		%ticker = %{$json->decode($apiresponse)};
+	};
+	if ($@) {
+		printf STDERR "ApiPirce(%s, %s): %s\n", $version, $exchange, $@;
+		my %price;
+		return \%price;
+	}
+	my %prices = %{$ticker{'ticker'}};
+	my %price = (
+		'updated' => $prices{'updated'},
+		'last' => $prices{'last'},
+		'high' => $prices{'high'},
+		'low' => $prices{'low'},
+		'avg' => $prices{'avg'},
+		'buy' => $prices{'buy'},
+		'sell' => $prices{'sell'},
+	);
+
+	return \%price;
 }
 
 sub _createnonce
@@ -175,11 +154,28 @@ sub _createnonce
 	return time;
 }
 
+sub _secretkey
+{
+	my ($self) = @_;
+	return $self->{'secret'};
+}
+
 sub _signdata
 {
 	my ($self, $params) = @_;
 	return hmac_sha512_hex($params,$self->_secretkey);
 }
+
+sub _newagent
+{
+	my ($version) = @_;
+	my $agent = LWP::UserAgent->new(ssl_opts => {verify_hostname => 1}, env_proxy => 1);
+	if (defined($version)) {
+		$agent->agent($version);
+	}
+	return $agent;
+}
+
 
 1;
 __END__
