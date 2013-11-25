@@ -20,7 +20,7 @@ our @ISA = qw(Exporter);
 # This allows declaration	use Finance::btce ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(BtceConversion BTCtoUSD LTCtoBTC LTCtoUSD getInfo) ] );
+our %EXPORT_TAGS = ( 'all' => [ qw(BtceConversion BTCtoUSD LTCtoBTC LTCtoUSD getInfo TransHistory) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
@@ -65,7 +65,10 @@ sub new
 	{
 		croak "You must provide an apikey and secret";
 	}
-	return bless $args, $class;
+	my $self = { };
+	$self->{apikey} = $args->{'apikey'};
+	$self->{secret} = $args->{'secret'};
+	return bless $self, $class;
 }
 
 sub getInfo
@@ -88,20 +91,13 @@ sub getInfo
 
 sub TransHistory
 {
-	my ($self, $args) = @_;
-	my $data = "method=TransHistory&";
-	my %arguments = %{$args};
+	my ($self) = @_;
 	my $mech = WWW::Mechanize->new();
 	$mech->stack_depth(0);
 	$mech->agent_alias('Windows IE 6');
 	my $url = "https://btc-e.com/tapi";
 	my $nonce = $self->_createnonce;
-
-	foreach my $key(keys %arguments)
-	{
-		$data += "$key=$arguments{$key}&";
-	}
-	$data += "nonce=".$nonce;
+	my $data = "method=TransHistory&nonce=".$nonce;
 	my $hash = $self->_signdata($data);
 	$mech->add_header('Key' => $self->_apikey);
 	$mech->add_header('Sign' => $hash);
@@ -193,22 +189,24 @@ Version 0.01
 
   use Finance::btce;
 
-  my $btce = Finance::btce->new({key => 'key', secret => 'secret',});
+  my $btce = Finance::btce->new({apikey => 'key',
+	secret => 'secret',});
 
   #public API calls
   
   #Prices for Bitcoin to USD
-  my %price = %{BTCtoUSD()};
+  my %price = %{BtceConversion('btc_usd')};
 
   #Prices for Litecoin to Bitcoin
-  my %price = %{LTCtoBTC()};
+  my %price = %{BtceConversion('ltc_btc')};
   
   #Prices for Litecoin to USD
-  my %price = %{LTCtoUSD()};
+  my %price = %{BtceConversion('ltc_usd')};
 
   #Authenticated API Calls
 
   my %accountinfo = %{$btce->getInfo()};
+  my %accountinfo = %{$btce->TransHistory()};
 
 =head2 EXPORT
 
