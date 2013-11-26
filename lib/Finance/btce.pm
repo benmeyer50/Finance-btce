@@ -3,6 +3,7 @@ package Finance::btce;
 use 5.012004;
 use strict;
 use warnings;
+use POSIX; # for INT_MAX
 use JSON;
 use LWP::UserAgent;
 use Carp qw(croak);
@@ -20,7 +21,7 @@ our @ISA = qw(Exporter);
 # This allows declaration	use Finance::btce ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(BtceConversion BTCtoUSD LTCtoBTC LTCtoUSD getInfo TransHistory) ] );
+our %EXPORT_TAGS = ( 'all' => [ qw(BtceConversion BTCtoUSD LTCtoBTC LTCtoUSD getInfo TradeHistory) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
@@ -74,37 +75,41 @@ sub new
 sub getInfo
 {
 	my ($self) = @_;
-	my $mech = WWW::Mechanize->new();
-	$mech->stack_depth(0);
-	$mech->agent_alias('Windows IE 6');
-	my $url = "https://btc-e.com/tapi";
-	my $nonce = $self->_createnonce;
-	my $data = "method=getInfo&nonce=".$nonce;
-	my $hash = $self->_signdata($data);
-	$mech->add_header('Key' => $self->_apikey);
-	$mech->add_header('Sign' => $hash);
-	$mech->post($url, ['method' => 'getInfo', 'nonce' => $nonce]);
-	my %apireturn = %{$json->decode($mech->content())};
-
-	return \%apireturn;
+	return $self->_post('getInfo');
 }
 
-sub TransHistory
+sub TradeHistory
 {
-	my ($self) = @_;
-	my $mech = WWW::Mechanize->new();
-	$mech->stack_depth(0);
-	$mech->agent_alias('Windows IE 6');
-	my $url = "https://btc-e.com/tapi";
-	my $nonce = $self->_createnonce;
-	my $data = "method=TransHistory&nonce=".$nonce;
-	my $hash = $self->_signdata($data);
-	$mech->add_header('Key' => $self->_apikey);
-	$mech->add_header('Sign' => $hash);
-	$mech->post($url, ['method' => 'TransHistory', 'nonce' => $nonce]);
-	my %apireturn = %{$json->decode($mech->content())};
+	my ($self, $args) = @_;
+	return $self->_post('TradeHistory', $args);
+}
 
-	return \%apireturn;
+sub ActiveOrders
+{
+	my ($self, $exchange) = @_;
+	my $args;
+	${$args}{'pair'} = $exchange;
+	return $self->_post('ActiveOrders', $args);
+}
+
+sub CancelOrder
+{
+	my ($self, $oid) = @_;
+	my $args;
+	${$args}{'order_id'} = $oid;
+	return $self->_post('CancelOrder', $args);
+}
+
+sub Trade
+{
+	my ($self, $args) = @_;
+	if ($args->{'pair'} && $args->{'type'} && $args->{'rate'} &&
+	    $args->{'amount'}) {
+		# check validity of arguments somehow??
+	} else {
+		croak "Trade requires pair+type+rate+amount args";
+	}
+	return $self->_post('Trade', $args);
 }
 
 #private methods
@@ -147,7 +152,51 @@ sub _apiprice
 
 sub _createnonce
 {
-	return time;
+	my ($self) = @_;
+	if (!defined($self->{nonce})) {
+		# XXX why does this not work --> int(rand(INT_MAX));
+		$self->{nonce} = time();
+	} else {
+		$self->{nonce}++;
+	}
+	return $self->{nonce};
+}
+
+sub _post
+{
+	my ($self, $method, $args) = @_;
+	my $mech = WWW::Mechanize->new();
+	$mech->stack_depth(0);
+	$mech->agent_alias('Windows IE 6');
+	my $url = "https://btc-e.com/tapi";
+	my $nonce = $self->_createnonce;
+	my $data = "method=".$method;
+	my $pdata;
+	${$pdata}{'method'} = $method;
+	if (defined($args)) {
+		foreach my $var (keys %{$args}) {
+			my $val = ${$args}{$var};
+			if (!defined($val)) {
+				next;
+			}
+			$data .= "&".$var."=".$val;
+			${$pdata}{$var}=$val;
+		}
+	}
+	$data .= "&nonce=".$nonce;
+	${$pdata}{'nonce'}=$nonce;
+	printf "_post: data: '%s'\n", $data;
+	my $hash = $self->_signdata($data);
+	$mech->add_header('Key' => $self->_apikey);
+	$mech->add_header('Sign' => $hash);
+	# XXX somehow this needs to mimic the below with variable entries
+	# $mech->post($url, [ var => val, ..., nonce => $nonce ]);
+	# $mech->post($url, \%{$pdata});
+	# This works if there are no args.. can someone fix this properly?
+	$mech->post($url, [ method => $method, nonce => $nonce ]);
+	my %apireturn = %{$json->decode($mech->content())};
+
+	return \%apireturn;
 }
 
 sub _secretkey
@@ -206,7 +255,32 @@ Version 0.01
   #Authenticated API Calls
 
   my %accountinfo = %{$btce->getInfo()};
-  my %accountinfo = %{$btce->TransHistory()};
+
+  # all parameters are optional
+  my %history = %{$btce->TradeHistory({
+	'from' => 0,
+	'count' => 1000,
+	'from_id' => 0,
+	'end_id' => infinity,
+	'order' => ASC or DESC,
+	'since' => UNIX time start,
+	'end' => UNIX time stop,
+	'pair' => 'btc_usd' or default is all pairs,
+	});
+  my %activeorders = %{$btce->ActiveOrders({
+	'pair' => 'btc_usd'
+	})};
+
+  # all parameters are required
+  my %trade = %{$btce->Trade({
+	'pair' => 'btc_usd',
+	'type' => 'buy' || 'sell',
+	'rate' => '0.00000001',
+	'amount' => '0.1234',
+	})};
+  my %cancel = %{$btce->CancelOrders({
+	'order_id' => 1234,
+	})};
 
 =head2 EXPORT
 
