@@ -7,8 +7,9 @@ use POSIX; # for INT_MAX
 use JSON;
 use LWP::UserAgent;
 use Carp qw(croak);
-use Digest::SHA qw( hmac_sha512_hex);
+use Digest::SHA qw(hmac_sha512_hex);
 use WWW::Mechanize;
+use MIME::Base64;
 
 require Exporter;
 
@@ -69,6 +70,8 @@ sub new
 	my $self = { };
 	$self->{apikey} = $args->{'apikey'};
 	$self->{secret} = $args->{'secret'};
+	$self->{mech} = WWW::Mechanize->new(stack_depth => 0, quiet=>0);
+	$self->{mech}->agent_alias('Windows IE 6');
 	return bless $self, $class;
 }
 
@@ -132,7 +135,7 @@ sub _apiprice
 		%ticker = %{$json->decode($apiresponse)};
 	};
 	if ($@) {
-		printf STDERR "ApiPirce(%s, %s): %s\n", $version, $exchange, $@;
+		printf STDERR "ApiPrice(%s, %s): %s\n", $version, $exchange, $@;
 		my %price;
 		return \%price;
 	}
@@ -162,46 +165,46 @@ sub _createnonce
 	return $self->{nonce};
 }
 
+sub _decode
+{
+	my ($self) = @_;
+
+	my %apireturn = %{$json->decode( $self->_mech->content )};
+
+	return \%apireturn;
+}
+
+sub _mech
+{
+	my ($self) = @_;
+
+	return $self->{mech};
+}
+
 sub _post
 {
 	my ($self, $method, $args) = @_;
-	my $mech = WWW::Mechanize->new();
-	$mech->stack_depth(0);
-	$mech->agent_alias('Windows IE 6');
-	my $url = "https://btc-e.com/tapi";
-	my $nonce = $self->_createnonce;
-	my $data = "method=".$method;
-	my %pdata;
-	$pdata{'method'} = $method;
+	my $uri = URI->new("https://btc-e.com/tapi");
+	my $req = HTTP::Request->new( 'POST', $uri );
+	my $query = "method=${method}";
 	if (defined($args)) {
 		foreach my $var (keys %{$args}) {
 			my $val = ${$args}{$var};
 			if (!defined($val)) {
 				next;
 			}
-			$data .= "&".$var."=".$val;
-			$pdata{$var}=$val;
+			$query .= "&".$var."=".$val;
 		}
 	}
-	$data .= "&nonce=".$nonce;
-	$pdata{'nonce'}=$nonce;
-	printf "_post: data: '%s'\n", $data;
-	my $hash = $self->_signdata($data);
-	$mech->add_header('Key' => $self->_apikey);
-	$mech->add_header('Sign' => $hash);
+	$query .= "&nonce=".$self->_createnonce;
+	$uri->query(undef);
+	$req->header( 'Content-Type' => 'application/x-www-form-urlencoded');
+	$req->content($query);
+	$req->header('Key' => $self->_apikey);
+	$req->header('Sign' => $self->_sign($query));
+	$self->_mech->request($req);
 
-	# XXX somehow this needs to mimic the below with variable entries
-
-	# The below line parses but fails the sign test
-	# $mech->post($url, [ %pdata ]);
-
-	# The below line parses and passes the sign test if $args above
-	# is undefined *sigh*
-	$mech->post($url, [ method => $method, nonce => $nonce ]);
-
-	my %apireturn = %{$json->decode($mech->content())};
-
-	return \%apireturn;
+	return $self->_decode;
 }
 
 sub _secretkey
@@ -210,7 +213,7 @@ sub _secretkey
 	return $self->{'secret'};
 }
 
-sub _signdata
+sub _sign
 {
 	my ($self, $params) = @_;
 	return hmac_sha512_hex($params,$self->_secretkey);
