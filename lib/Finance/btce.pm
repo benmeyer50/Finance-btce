@@ -58,20 +58,21 @@ sub BtceConversion
 
 sub new
 {
-	my ($class, $args) = @_;
-	if($args->{'apikey'} && $args->{'secret'})
-	{
-		#check for existence of keys
-	}
-	else
+	my ($class, @args) = @_;
+	
+	my $self = {
+		mech => WWW::Mechanize->new(stack_depth => 0, quiet=>0),
+		@args
+	};
+	
+	unless ($self->{'apikey'} && $self->{'secret'})
 	{
 		croak "You must provide an apikey and secret";
+		return undef;
 	}
-	my $self = { };
-	$self->{apikey} = $args->{'apikey'};
-	$self->{secret} = $args->{'secret'};
-	$self->{mech} = WWW::Mechanize->new(stack_depth => 0, quiet=>0);
+
 	$self->{mech}->agent_alias('Windows IE 6');
+
 	return bless $self, $class;
 }
 
