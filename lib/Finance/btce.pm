@@ -171,8 +171,8 @@ sub _post
 	my $url = "https://btc-e.com/tapi";
 	my $nonce = $self->_createnonce;
 	my $data = "method=".$method;
-	my $pdata;
-	${$pdata}{'method'} = $method;
+	my %pdata;
+	$pdata{'method'} = $method;
 	if (defined($args)) {
 		foreach my $var (keys %{$args}) {
 			my $val = ${$args}{$var};
@@ -180,20 +180,25 @@ sub _post
 				next;
 			}
 			$data .= "&".$var."=".$val;
-			${$pdata}{$var}=$val;
+			$pdata{$var}=$val;
 		}
 	}
 	$data .= "&nonce=".$nonce;
-	${$pdata}{'nonce'}=$nonce;
+	$pdata{'nonce'}=$nonce;
 	printf "_post: data: '%s'\n", $data;
 	my $hash = $self->_signdata($data);
 	$mech->add_header('Key' => $self->_apikey);
 	$mech->add_header('Sign' => $hash);
+
 	# XXX somehow this needs to mimic the below with variable entries
-	# $mech->post($url, [ var => val, ..., nonce => $nonce ]);
-	# $mech->post($url, \%{$pdata});
-	# This works if there are no args.. can someone fix this properly?
+
+	# The below line parses but fails the sign test
+	# $mech->post($url, [ %pdata ]);
+
+	# The below line parses and passes the sign test if $args above
+	# is undefined *sigh*
 	$mech->post($url, [ method => $method, nonce => $nonce ]);
+
 	my %apireturn = %{$json->decode($mech->content())};
 
 	return \%apireturn;
