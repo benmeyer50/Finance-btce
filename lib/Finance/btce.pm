@@ -108,6 +108,8 @@ sub Trade
 	my ($self, $args) = @_;
 	if ($args->{'pair'} && $args->{'type'} && $args->{'rate'} &&
 	    $args->{'amount'}) {
+		$args->{'rate'} =~ s/0+$//g;
+		$args->{'amount'} =~ s/0+$//g;
 		# check validity of arguments somehow??
 	} else {
 		croak "Trade requires pair+type+rate+amount args";
