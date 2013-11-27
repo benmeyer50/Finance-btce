@@ -111,6 +111,8 @@ sub Trade
 	    $args->{'amount'}) {
 		$args->{'rate'} =~ s/0+$//g;
 		$args->{'amount'} =~ s/0+$//g;
+		$args->{'rate'} =~ s/\.$//g;
+		$args->{'amount'} =~ s/\.$//g;
 		# check validity of arguments somehow??
 	} else {
 		croak "Trade requires pair+type+rate+amount args";
