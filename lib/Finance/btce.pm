@@ -141,6 +141,8 @@ sub _apiprice
 	};
 	if ($@) {
 		printf STDERR "ApiPrice(%s, %s): %s\n", $version, $exchange, $@;
+		printf STDERR "ApiPrice(%s, %s): response = '%s'\n",
+			$version, $exchange, $apiresponse;
 		my %price;
 		return \%price;
 	}
