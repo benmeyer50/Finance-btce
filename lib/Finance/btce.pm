@@ -52,7 +52,12 @@ sub BtceConversion
 	my ($exchange) = @_;
 	return _apiprice('Mozilla/4.76 [en] (Win98; U)', $exchange);
 }
-	
+
+sub BtceFee
+{
+	my ($exchange) = @_;
+	return _apifee('Mozilla/4.76 [en] (Win98; U)', $exchange);
+}
 
 ### Authenticated API calls
 
@@ -92,7 +97,9 @@ sub ActiveOrders
 {
 	my ($self, $exchange) = @_;
 	my $args;
-	${$args}{'pair'} = $exchange;
+	if (defined($exchange)) {
+		${$args}{'pair'} = $exchange;
+	}
 	return $self->_post('ActiveOrders', $args);
 }
 
@@ -109,11 +116,13 @@ sub Trade
 	my ($self, $args) = @_;
 	if ($args->{'pair'} && $args->{'type'} && $args->{'rate'} &&
 	    $args->{'amount'}) {
-		$args->{'rate'} =~ s/0+$//g;
-		$args->{'amount'} =~ s/0+$//g;
-		$args->{'rate'} =~ s/\.$//g;
-		$args->{'amount'} =~ s/\.$//g;
-		# check validity of arguments somehow??
+		foreach my $v (('rate','amount')) {
+			# can't have more than 8 digits of precision
+			$args->{$v} = sprintf "%0.8f", $args->{$v};
+			$args->{$v} =~ s/0+$//g;
+			$args->{$v} =~ s/\.$//g;
+		}
+		# further check validity of arguments somehow??
 	} else {
 		croak "Trade requires pair+type+rate+amount args";
 	}
@@ -128,23 +137,43 @@ sub _apikey
 	return $self->{'apikey'};
 }
 
+sub _apiget
+{
+	my ($version, $url) = @_;
+
+	my $browser = _newagent($version);
+	retryapiget:
+	my $resp = $browser->get($url);
+	my $response = $resp->content;
+	my %info;
+	eval {
+		%info = %{$json->decode($response)};
+	};
+	if ($@) {
+		if ($response =~ /Please try again in a few minutes/ ||
+			$response =~ /handshake problems/ ||
+			$response =~ /connection issue between CloudFare/ ||
+			$response =~ /Connection timed out/) {
+			print STDERR "!";
+			sleep(5);
+			goto retryapiget;
+		}
+		printf STDERR "ApiGet(%s, %s): response = '%s'\n",
+			$version, $url, $response;
+		printf STDERR "ApiPrice(%s, %s): %s\n", $version, $url, $@;
+		my %i;
+		return \%i;
+	}
+	return \%info;
+}
+
 sub _apiprice
 {
 	my ($version, $exchange) = @_;
 
-	my $browser = Finance::btce::_newagent($version);
-	my $resp = $browser->get("https://btc-e.com/api/2/".$exchange."/ticker");
-	my $apiresponse = $resp->content;
-	my %ticker;
-	eval {
-		%ticker = %{$json->decode($apiresponse)};
-	};
-	if ($@) {
-		printf STDERR "ApiPrice(%s, %s): %s\n", $version, $exchange, $@;
-		printf STDERR "ApiPrice(%s, %s): response = '%s'\n",
-			$version, $exchange, $apiresponse;
-		my %price;
-		return \%price;
+	my %ticker = %{_apiget($version, "https://btc-e.com/api/2/".$exchange."/ticker")};
+	if (! keys %ticker) {
+		return \%ticker;
 	}
 	my %prices = %{$ticker{'ticker'}};
 	my %price = (
@@ -159,6 +188,15 @@ sub _apiprice
 
 	return \%price;
 }
+
+sub _apifee
+{
+	my ($version, $exchange) = @_;
+
+	my %fees = %{_apiget($version, "https://btc-e.com/api/2/".$exchange."/fee")};
+	return \%fees;
+}
+	
 
 sub _createnonce
 {
@@ -209,7 +247,20 @@ sub _post
 	$req->content($query);
 	$req->header('Key' => $self->_apikey);
 	$req->header('Sign' => $self->_sign($query));
-	$self->_mech->request($req);
+	retry:
+	eval {
+		$self->_mech->request($req);
+	};
+	if ($@) {
+		if ($@ =~ /(Connection timed out|Please try again in a few minute|handshake problems|unknown connection issue between CloudFare)/) {
+			print STDERR "!";
+			sleep(5);
+			goto retry;
+		}
+		printf STDERR "_post: self->_mech->_request: %s\n", $@;
+		my %empty;
+		return \%empty;
+	}
 
 	return $self->_decode;
 }
