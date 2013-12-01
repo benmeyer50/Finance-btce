@@ -63,11 +63,12 @@ sub BtceFee
 
 sub new
 {
-	my ($class, @args) = @_;
+	my ($class, $args) = @_;
 	
 	my $self = {
 		mech => WWW::Mechanize->new(stack_depth => 0, quiet=>0),
-		@args
+		apikey => ${$args}{'apikey'},
+		secret => ${$args}{'secret'},
 	};
 	
 	unless ($self->{'apikey'} && $self->{'secret'})
