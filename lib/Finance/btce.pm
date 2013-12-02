@@ -173,7 +173,7 @@ sub _apiprice
 	my ($version, $exchange) = @_;
 
 	my %ticker = %{_apiget($version, "https://btc-e.com/api/2/".$exchange."/ticker")};
-	if (! keys %ticker) {
+	if (! keys %ticker || ! defined($ticker{'ticker'})) {
 		return \%ticker;
 	}
 	my %prices = %{$ticker{'ticker'}};
