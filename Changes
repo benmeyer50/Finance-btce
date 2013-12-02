@@ -9,3 +9,7 @@ Revision history for Perl extension Finance::btce.
 	- added new() method to store keys
 	- added getInfo method to return info about account
 
+0.??
+	- added fee api
+	- added 'btce' a simple tool to use all interfaces
+
