@@ -2,5 +2,6 @@ Changes
 Makefile.PL
 MANIFEST
 README
+btce
 t/Finance-btce.t
 lib/Finance/btce.pm

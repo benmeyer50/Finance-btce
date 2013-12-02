@@ -1,0 +1,117 @@
+#!/usr/bin/perl
+
+# Copyright (c) 2013 Todd T. Fries <todd@fries.net>
+#
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+use strict;
+use warnings;
+
+use Finance::btce qw(BtceConversion);
+
+my ($apikey, $secret);
+
+my $configfile = $ENV{'HOME'}."/.btce.conf";
+if (-f $configfile) {
+	open(CONFIG, $configfile);
+	while(<CONFIG>) {
+		my $line;
+		chomp($line = $_);
+		if ($line =~ /^([a-z]+)\s*=\s*(.*)$/) {
+			my ($var,$val) = ($1,$2);
+			if ($var eq "apikey") {
+				$apikey = $val;
+			} elsif ($var eq "secret") {
+				$secret = $val;
+			} else {
+				printf STDERR "Unrecognized: '%s' = '%s'\n",
+				    $var, $val;
+			}
+		}
+	}
+	close(CONFIG);
+}
+
+if (!defined($apikey) || !defined($secret)) {
+	printf STDERR "Either apikey or secret undefined, bailing\n";
+}
+
+my $btce = Finance::btce->new( { apikey => $apikey, secret => $secret, });
+
+my %result;
+if ($ARGV[0] eq "getinfo") {
+	%result = %{$btce->getInfo()};
+} elsif ($ARGV[0] eq "fee" && defined($ARGV[1])) {
+	%result = %{Finance::btce::BtceFee($ARGV[1])};
+} elsif ($ARGV[0] eq "history") {
+	%result = %{$btce->TradeHistory()};
+} elsif ($ARGV[0] eq "activeorders") {
+	%result = %{$btce->ActiveOrders($ARGV[1])};
+} elsif ($ARGV[0] eq "trade") {
+	my $args;
+	${$args}{'pair'} = $ARGV[1];
+	${$args}{'type'} = $ARGV[2];
+	${$args}{'rate'} = $ARGV[3];
+	${$args}{'amount'} = $ARGV[4];
+	%result = %{$btce->Trade($args)};
+} elsif ($ARGV[0] eq "cancel" && defined($ARGV[1])) {
+	%result = %{$btce->CancelOrder($ARGV[1])};
+} else {
+	printf STDERR "Invalid method: %s, bailing!\n", $ARGV[0];
+	exit(1);
+}
+
+foreach my $var (keys %result)
+{
+	my $val = $result{$var};
+	printf " %s = ", $var;
+	unless (ref($val)) {
+		printf "%s\n", $val;
+		next;
+	}
+	if (ref($val) eq "HASH") {
+		print "HASH {\n";
+		my @sortedkeys;
+		my @keys = keys %{$val};
+		if ($ARGV[0] =~ /^(history|activeorders)/) {
+			@sortedkeys = sort @keys;
+		} else {
+			@sortedkeys = @keys;
+		}
+		foreach my $k (@sortedkeys) {
+			my $v = ${$val}{$k};
+			printf "\t'%s' => ",$k;
+			unless (ref($v)) {
+				printf "'%s',\n",$v;
+				next;
+			}
+			if (ref($v) eq "HASH") {
+				print "HASH {\n";
+				my $valfmt = "'%s'";
+				if ($k eq "funds") {
+					$valfmt = "%0.8f";
+				}
+				foreach my $l (keys %{$v}) {
+					printf "\t\t'%s' => ",$l;
+					printf $valfmt.",\n", ${$v}{$l};
+				}
+				print "\t},\n";
+				next;
+			}
+			print "\t".ref($val)." {...},\n";
+		}
+		print "},\n";
+		next;
+	}
+	print ref($val)." {...},\n";
+}
