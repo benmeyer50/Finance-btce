@@ -197,14 +197,17 @@ sub _apifee
 	my %fees = %{_apiget($version, "https://btc-e.com/api/2/".$exchange."/fee")};
 	return \%fees;
 }
-	
 
+# A word about nonces.  Nowhere can I find this documented, but through
+# experience I have figured out that the nonce is a unique integer per api key
+# that must be incremented per reqest.  Whatever one starts out with, one must
+# increment.  Thus unix time seems appropriate for most use cases.
+# In the event multiple apps are using the same api key (debug daemon + reg
 sub _createnonce
 {
 	my ($self) = @_;
 	if (!defined($self->{nonce})) {
-		# XXX why does this not work --> int(rand(INT_MAX));
-		$self->{nonce} = time();
+		$self->{nonce} = int(rand(INT_MAX));
 	} else {
 		$self->{nonce}++;
 	}
@@ -230,6 +233,7 @@ sub _mech
 sub _post
 {
 	my ($self, $method, $args) = @_;
+	retrynonce:
 	my $uri = URI->new("https://btc-e.com/tapi");
 	my $req = HTTP::Request->new( 'POST', $uri );
 	my $query = "method=${method}";
@@ -262,8 +266,18 @@ sub _post
 		my %empty;
 		return \%empty;
 	}
+	my %result = %{$self->_decode};
+	if (defined($result{success}) && defined($result{error})) {
+		if ($result{success} == 0 && $result{error} =~
+		    /invalid nonce parameter; on key:([0-9]+),/) {
+			my $newnonce = $1;
+			$self->{nonce} = $newnonce;
+			printf STDERR "using new nonce %d\n", $newnonce;
+			goto retrynonce;
+		}
+	}
 
-	return $self->_decode;
+	return \%result;
 }
 
 sub _secretkey
