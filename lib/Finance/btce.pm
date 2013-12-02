@@ -204,6 +204,8 @@ sub _apiprice
 		'avg' => $prices{'avg'},
 		'buy' => $prices{'buy'},
 		'sell' => $prices{'sell'},
+		'vol' => $prices{'vol'},
+		'vol_cur' => $prices{'vol_cur'},
 	);
 
 	return \%price;
