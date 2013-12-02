@@ -91,16 +91,16 @@ act
 		}
 		if (ref($val) eq "HASH") {
 			print "HASH {\n";
-			my @sortedkeys;
+			my $keyfmt = "'%s'";
 			my @keys = keys %{$val};
+			my @sortedkeys = @keys;
 			if ($argv[0] =~ /^(history|activeorders)/) {
 				@sortedkeys = sort @keys;
-			} else {
-				@sortedkeys = @keys;
+				$keyfmt = "%d";
 			}
 			foreach my $k (@sortedkeys) {
 				my $v = ${$val}{$k};
-				printf "\t'%s' => ",$k;
+				printf "\t".$keyfmt." => ",$k;
 				unless (ref($v)) {
 					printf "'%s',\n",$v;
 					next;
@@ -112,8 +112,15 @@ act
 						$valfmt = "%0.8f";
 					}
 					foreach my $l (keys %{$v}) {
+						# temp value format
+						my $tvf = $valfmt;
 						printf "\t\t'%s' => ",$l;
-						printf $valfmt.",\n", ${$v}{$l};
+						if ($l =~ /rate|amount/) {
+							$tvf = "%0.8f";
+						} elsif ($l =~ /timestamp|order_id/) {
+							$tvf = "%d";
+						}
+						printf $tvf.",\n", ${$v}{$l};
 					}
 					print "\t},\n";
 					next;
