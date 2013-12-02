@@ -56,45 +56,46 @@ act
 	my (@argv) = @_;
 	my %result;
 	my @resultkeys;
+	my $res;
 	if ($argv[0] eq "getinfo") {
-		%result = %{$btce->getInfo()};
+		$res = $btce->getInfo();
 	} elsif ($argv[0] eq "quit") {
 		exit(0);
 	} elsif ($argv[0] eq "ex" && defined($argv[1])) {
-		%result = %{BtceConversion($argv[1])};
+		$res = BtceConversion($argv[1]);
 		@resultkeys = ('updated', 'last', 'avg', 'high', 'low',
 		    'buy', 'sell' );
 	} elsif ($argv[0] eq "fee" && defined($argv[1])) {
-		%result = %{BtceFee($argv[1])};
+		$res = BtceFee($argv[1]);
 	} elsif ($argv[0] eq "trades" && defined($argv[1])) {
-		%result = %{BtceTrades($argv[1])};
+		$res = BtceTrades($argv[1]);
 	} elsif ($argv[0] eq "depth" && defined($argv[1])) {
-		%result = %{BtceDepth($argv[1])};
+		$res = BtceDepth($argv[1]);
 	} elsif ($argv[0] eq "history") {
-		%result = %{$btce->TradeHistory()};
+		$res = $btce->TradeHistory();
 	} elsif ($argv[0] eq "activeorders") {
-		%result = %{$btce->ActiveOrders($argv[1])};
+		$res = $btce->ActiveOrders($argv[1]);
 	} elsif ($argv[0] eq "trade") {
 		my $args;
 		${$args}{'pair'} = $argv[1];
 		${$args}{'type'} = $argv[2];
 		${$args}{'rate'} = $argv[3];
 		${$args}{'amount'} = $argv[4];
-		%result = %{$btce->Trade($args)};
+		$res = $btce->Trade($args);
 	} elsif ($argv[0] eq "cancel" && defined($argv[1])) {
-		%result = %{$btce->CancelOrder($argv[1])};
+		$res = $btce->CancelOrder($argv[1]);
 	} else {
 		printf STDERR "Invalid method: %s, bailing!\n", $argv[0];
 		exit(1);
 	}
 
-	if (! @resultkeys) {
-		@resultkeys = keys %result;
-	}
-	
+	if (ref($res) eq "HASH") {
+		if (! @resultkeys) {
+			@resultkeys = keys %{$res};
+		}
 	foreach my $var (@resultkeys)
 	{
-		my $val = $result{$var};
+		my $val = ${$res}{$var};
 		printf " %s = ", $var;
 		unless (ref($val)) {
 			printf "%s\n", $val;
@@ -162,6 +163,34 @@ act
 			next;
 		}
 		print ref($val)." {...},\n";
+	}
+	} elsif (ref($res) eq "ARRAY") {
+		print " ARRAY (\n";
+		foreach my $var (@{$res}) {
+			unless (ref($var)) {
+				printf "\t%s\n", $var;
+				next;
+			}
+			if (ref($var) eq "HASH") {
+				print "\tHASH {\n";
+				foreach my $k (keys %{$var}) {
+					my $v = ${$var}{$k};
+					printf "\t\t'%s' = ",$k;
+					unless (ref($v)) {
+						printf "'%s',\n", $v;
+						next;
+					}
+					print ref($v)." ...,\n";
+					next;
+				
+				}
+				print "\t},\n";
+				next;
+			}
+			print ref($var)." ...,\n";
+			next;
+		}
+		print ")\n";
 	}
 }
 

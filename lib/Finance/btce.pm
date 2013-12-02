@@ -160,9 +160,15 @@ sub _apiget
 	my $resp = $browser->get($url);
 	my $response = $resp->content;
 	my %info;
+	my $ret;
 	eval {
-		%info = %{$json->decode($response)};
+		$ret = $json->decode($response);
 	};
+	if (ref($ret) eq "HASH") {
+		%info = %{$ret};
+	} else {
+		return $ret;
+	}
 	if ($@) {
 		if ($response =~ /Please try again in a few minutes/ ||
 			$response =~ /handshake problems/ ||
@@ -215,8 +221,7 @@ sub _apitrades
 {
 	my ($version, $exchange) = @_;
 
-	my %trades = %{_apiget($version, "https://btc-e.com/api/2/".$exchange."/trades")};
-	return \%trades;
+	return _apiget($version, "https://btc-e.com/api/2/".$exchange."/trades");
 }
 
 sub _apidepth
