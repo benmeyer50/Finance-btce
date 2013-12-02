@@ -57,6 +57,9 @@ act
 	my %result;
 	my @resultkeys;
 	my $res;
+	if (!defined($argv[0])) {
+		return;
+	}
 	if ($argv[0] eq "getinfo") {
 		$res = $btce->getInfo();
 	} elsif ($argv[0] eq "quit") {
