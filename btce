@@ -128,10 +128,10 @@ if (@ARGV) {
 	exit(0);
 }
 
-my $term = Term::ReadLine->new('btc-e cli', *STDIN, *STDOUT);
+my $term = Term::ReadLine->new('btc-e', *STDIN, *STDOUT);
 $term->ornaments(0);
 
-my $prompt = "> ";
+my $prompt = "btc-e> ";
 my $line;
 while (1)
 {
