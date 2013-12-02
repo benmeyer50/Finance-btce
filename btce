@@ -57,6 +57,10 @@ act
 	my %result;
 	if ($argv[0] eq "getinfo") {
 		%result = %{$btce->getInfo()};
+	} elsif ($argv[0] eq "quit") {
+		exit(0);
+	} elsif ($argv[0] eq "ex" && defined($argv[1])) {
+		%result = %{BtceConversion($argv[1])};
 	} elsif ($argv[0] eq "fee" && defined($argv[1])) {
 		%result = %{Finance::btce::BtceFee($argv[1])};
 	} elsif ($argv[0] eq "history") {
