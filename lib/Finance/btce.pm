@@ -22,7 +22,7 @@ our @ISA = qw(Exporter);
 # This allows declaration	use Finance::btce ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(BtceConversion BTCtoUSD LTCtoBTC LTCtoUSD getInfo TradeHistory) ] );
+our %EXPORT_TAGS = ( 'all' => [ qw(BtceConversion BTCtoUSD LTCtoBTC LTCtoUSD BtceDepth BtceTrades) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
@@ -58,6 +58,19 @@ sub BtceFee
 	my ($exchange) = @_;
 	return _apifee('Mozilla/4.76 [en] (Win98; U)', $exchange);
 }
+
+sub BtceTrades
+{
+	my ($exchange) = @_;
+	return _apitrades('Mozilla/4.76 [en] (Win98; U)', $exchange);
+}
+
+sub BtceDepth
+{
+	my ($exchange) = @_;
+	return _apidepth('Mozilla/4.76 [en] (Win98; U)', $exchange);
+}
+	
 
 ### Authenticated API calls
 
@@ -196,6 +209,22 @@ sub _apifee
 
 	my %fees = %{_apiget($version, "https://btc-e.com/api/2/".$exchange."/fee")};
 	return \%fees;
+}
+
+sub _apitrades
+{
+	my ($version, $exchange) = @_;
+
+	my %trades = %{_apiget($version, "https://btc-e.com/api/2/".$exchange."/trades")};
+	return \%trades;
+}
+
+sub _apidepth
+{
+	my ($version, $exchange) = @_;
+
+	my %depth = %{_apiget($version, "https://btc-e.com/api/2/".$exchange."/depth")};
+	return \%depth;
 }
 
 # A word about nonces.  Nowhere can I find this documented, but through

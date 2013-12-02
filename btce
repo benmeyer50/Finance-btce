@@ -19,7 +19,7 @@ use warnings;
 
 use Term::ReadLine;
 
-use Finance::btce qw(BtceConversion);
+use Finance::btce ':all';
 
 my ($apikey, $secret);
 
@@ -65,7 +65,11 @@ act
 		@resultkeys = ('updated', 'last', 'avg', 'high', 'low',
 		    'buy', 'sell' );
 	} elsif ($argv[0] eq "fee" && defined($argv[1])) {
-		%result = %{Finance::btce::BtceFee($argv[1])};
+		%result = %{BtceFee($argv[1])};
+	} elsif ($argv[0] eq "trades" && defined($argv[1])) {
+		%result = %{BtceTrades($argv[1])};
+	} elsif ($argv[0] eq "depth" && defined($argv[1])) {
+		%result = %{BtceDepth($argv[1])};
 	} elsif ($argv[0] eq "history") {
 		%result = %{$btce->TradeHistory()};
 	} elsif ($argv[0] eq "activeorders") {
@@ -135,6 +139,26 @@ act
 				print "\t".ref($val)." {...},\n";
 			}
 			print "},\n";
+			next;
+		}
+		if (ref($val) eq "ARRAY") {
+			
+				
+			print "ARRAY (\n";
+			foreach my $k (@{$val}) {
+				unless (ref($val)) {
+					printf "\t'%s',\n", $k;
+					next;
+				}
+				if (ref($k) eq "ARRAY") {
+					print "\tARRAY (\n";
+					foreach my $l (@{$k}) {
+						printf "\t\t'%s',\n",$l;
+					}
+					print "\t),\n";
+				}
+			}
+			print ")\n";
 			next;
 		}
 		print ref($val)." {...},\n";
