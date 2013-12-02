@@ -55,12 +55,15 @@ act
 {
 	my (@argv) = @_;
 	my %result;
+	my @resultkeys;
 	if ($argv[0] eq "getinfo") {
 		%result = %{$btce->getInfo()};
 	} elsif ($argv[0] eq "quit") {
 		exit(0);
 	} elsif ($argv[0] eq "ex" && defined($argv[1])) {
 		%result = %{BtceConversion($argv[1])};
+		@resultkeys = ('updated', 'last', 'avg', 'high', 'low',
+		    'buy', 'sell' );
 	} elsif ($argv[0] eq "fee" && defined($argv[1])) {
 		%result = %{Finance::btce::BtceFee($argv[1])};
 	} elsif ($argv[0] eq "history") {
@@ -80,8 +83,12 @@ act
 		printf STDERR "Invalid method: %s, bailing!\n", $argv[0];
 		exit(1);
 	}
+
+	if (! @resultkeys) {
+		@resultkeys = keys %result;
+	}
 	
-	foreach my $var (keys %result)
+	foreach my $var (@resultkeys)
 	{
 		my $val = $result{$var};
 		printf " %s = ", $var;
