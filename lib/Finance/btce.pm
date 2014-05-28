@@ -1,4 +1,4 @@
-package Finance::btce;
+spackage Finance::btce;
 
 use 5.012004;
 use strict;
@@ -383,7 +383,7 @@ Version 0.01
 	'since' => UNIX time start,
 	'end' => UNIX time stop,
 	'pair' => 'btc_usd' or default is all pairs,
-	});
+	})};
   my %activeorders = %{$btce->ActiveOrders({
 	'pair' => 'btc_usd'
 	})};
