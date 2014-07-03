@@ -1,4 +1,4 @@
-spackage Finance::btce;
+package Finance::btce;
 
 use 5.012004;
 use strict;
