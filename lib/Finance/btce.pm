@@ -67,8 +67,8 @@ sub BtceTrades
 
 sub BtceDepth
 {
-	my ($exchange) = @_;
-	return _apidepth('Mozilla/4.76 [en] (Win98; U)', $exchange);
+	my ($exchange, $limit) = @_;
+	return _apidepth('Mozilla/4.76 [en] (Win98; U)', $exchange, $limit);
 }
 	
 
@@ -228,9 +228,20 @@ sub _apitrades
 
 sub _apidepth
 {
-	my ($version, $exchange) = @_;
+	# gv 2016-01-22
+	# in api v3 limit is added and multiple exchange pairs like "btc_usd-eur_usd"
+	# called with or without limit will force api v3 or v2
+	# the result hash of api v2 and v3 are different so be aware parsing the result with or without the limit param
+	my ($version, $exchange, $limit ) = @_;
+	my $url;
 
-	my %depth = %{_apiget($version, "https://btc-e.com/api/2/".$exchange."/depth")};
+	if ($limit) {
+		$url = "https://btc-e.com/api/3/depth/".$exchange."?limit=".$limit;
+	} else {
+		$url = "https://btc-e.com/api/2/".$exchange."/depth";
+	}
+    
+	my %depth = %{_apiget($version, $url)};
 	return \%depth;
 }
 
