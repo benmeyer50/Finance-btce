@@ -22,7 +22,7 @@ our @ISA = qw(Exporter);
 # This allows declaration	use Finance::btce ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(BtceConversion BTCtoUSD LTCtoBTC LTCtoUSD BtceDepth BtceTrades) ] );
+our %EXPORT_TAGS = ( 'all' => [ qw(BtceConversion BTCtoUSD LTCtoBTC LTCtoUSD BtceDepth BtceTrades BtceInfov3 BtceTickerv3) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
@@ -61,16 +61,28 @@ sub BtceFee
 
 sub BtceTrades
 {
-	my ($exchange) = @_;
-	return _apitrades('Mozilla/4.76 [en] (Win98; U)', $exchange);
+	my ($exchange, $limit) = @_;
+	return _apitrades('Mozilla/4.76 [en] (Win98; U)', $exchange, $limit);
 }
 
 sub BtceDepth
 {
-	my ($exchange) = @_;
-	return _apidepth('Mozilla/4.76 [en] (Win98; U)', $exchange);
+	my ($exchange, $limit) = @_;
+	return _apidepth('Mozilla/4.76 [en] (Win98; U)', $exchange, $limit);
 }
-	
+
+sub BtceInfov3
+{
+    return _apiinfov3('Mozilla/4.76 [en] (Win98; U)');
+}
+
+sub BtceTickerv3
+{
+    my ($exchange) = @_;
+    return _apitickerv3('Mozilla/4.76 [en] (Win98; U)', $exchange);
+}
+
+
 
 ### Authenticated API calls
 
@@ -221,18 +233,50 @@ sub _apifee
 
 sub _apitrades
 {
-	my ($version, $exchange) = @_;
+    my ($version, $exchange, $limit) = @_;
+    my $url;
+    
+    if ($limit) {
+        $url = "https://btc-e.com/api/3/trades/".$exchange."?limit=".$limit;
+    } else {
+	$url = "https://btc-e.com/api/2/".$exchange."/trades";
+    }
 
-	return _apiget($version, "https://btc-e.com/api/2/".$exchange."/trades");
+    return _apiget($version, $url);
 }
+
 
 sub _apidepth
 {
-	my ($version, $exchange) = @_;
-
-	my %depth = %{_apiget($version, "https://btc-e.com/api/2/".$exchange."/depth")};
+	# gv 2016-01-22
+	# in api v3 limit is added and multiple exchange pairs like "btc_usd-eur_usd"
+	# called with or without limit will force api v3 or v2
+	# the result hash of api v2 and v3 are different so be aware parsing the result with or without the limit param
+	my ($version, $exchange, $limit ) = @_;
+	my $url;
+	
+	if ($limit) {
+		$url = "https://btc-e.com/api/3/depth/".$exchange."?limit=".$limit;
+	} else {
+		$url = "https://btc-e.com/api/2/".$exchange."/depth";
+	}
+	
+	my %depth = %{_apiget($version, $url)};
 	return \%depth;
 }
+
+sub _apiinfov3
+{
+    my $version = @_;
+	return _apiget($version, "https://btc-e.com/api/3/info");
+}
+
+sub _apitickerv3
+{
+	my ($version, $exchange) = @_;
+	return _apiget($version, "https://btc-e.com/api/3/ticker/".$exchange);
+}
+
 
 # A word about nonces.  Nowhere can I find this documented, but through
 # experience I have figured out that the nonce is a unique integer per api key
